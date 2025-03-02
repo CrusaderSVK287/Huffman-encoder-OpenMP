@@ -1,30 +1,25 @@
-#include <iostream>
+#include <exception>
 #include <omp.h>
+#include <iostream>
+#include "huffman.hpp"
 
-int main() {
+int main(int argc, char **argv) {
 
 #ifdef _SERIAL
     std::cout << "Warning, running in serial mode" << std::endl;
 #endif 
 
-    const int SIZE = 100000;
-    int arr[SIZE];
-    long long sum = 0;
+    Settings settings(argc, argv);
 
-    // Initialize array with values
-    for (int i = 0; i < SIZE; i++) {
-        arr[i] = i + 1;
+    try {
+        settings.check();
+        
+        omp_set_num_threads(settings.threadCount);
+        
+        huffmanEncode(settings);
     }
-
-    // Parallel sum calculation
-#ifndef _SERIAL
-    #pragma omp parallel for reduction(+:sum)
-#endif
-    for (int i = 0; i < SIZE; i++) {
-        sum += arr[i];
+    catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
     }
-
-    std::cout << "Sum: " << sum << std::endl;
-    return 0;
 }
 

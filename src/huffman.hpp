@@ -4,6 +4,12 @@
 #include <string>
 #include <cstring>
 #include <iostream>
+#include <unordered_map>
+#include <list>
+
+class Settings;
+class HuffmanTree;
+class Node;
 
 class Settings {
 public:
@@ -32,4 +38,32 @@ public:
     std::string path {""};
 };
 
+class HuffmanTree {
+public:
+    HuffmanTree() {
+
+    }
+
+    void InsertNodeToList(std::list<Node> &l, Node n);
+    void create(std::unordered_map<char, int> &map);
+    void dumpTree() {_dumpTree(root, 0, "root");};
+
+private:
+    void _dumpTree(Node *n, int depth, std::string s);
+    std::list<Node> l;
+    
+    Node *root;
+};
+
+class Node {
+public:
+    Node() {};
+
+    bool    isLeaf      {false};
+    int     frequency   {0};
+    char    character   {0};
+
+    Node *lnode {nullptr};
+    Node *rnode {nullptr};
+};
 void huffmanEncode(Settings &);

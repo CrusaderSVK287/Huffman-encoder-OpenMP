@@ -18,8 +18,8 @@ public:
             if (!strcmp(argv[i], "-n")) {
                 this->threadCount = std::stoi(argv[i+1]);
             }
-            else if (i == argc -1 ) {
-                this->path = argv[i];
+            else if (!strcmp(argv[i], "-i")) {
+                this->path = argv[i+1];
             }
         }
     }
@@ -34,7 +34,7 @@ public:
     }
 
     int threadCount {-1};
-    const std::string usage = "./huffman -n <num_of_threads> <infile>";
+    const std::string usage = "./huffman [-n <num_of_threads>] -i <infile>";
     std::string path {""};
 };
 

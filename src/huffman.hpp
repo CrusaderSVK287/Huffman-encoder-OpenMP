@@ -6,6 +6,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <list>
+#include <vector>
 
 class Settings;
 class HuffmanTree;
@@ -47,6 +48,7 @@ public:
     void InsertNodeToList(std::list<Node> &l, Node n);
     void create(std::unordered_map<char, int> &map);
     void dumpTree() {_dumpTree(root, 0, "root");};
+    Node *getRootNode() {return root;}
 
 private:
     void _dumpTree(Node *n, int depth, std::string s);
@@ -66,4 +68,19 @@ public:
     Node *lnode {nullptr};
     Node *rnode {nullptr};
 };
+
+class Encoder {
+public:
+    Encoder() {};
+    void encode(HuffmanTree &t);
+    void _dumpMappings();
+    std::unordered_map<char, std::vector<bool>> getMapping() {return m_mapping;}
+
+private:
+
+    void generateHuffmanCodes(Node *root, std::vector<bool> code);
+
+    std::unordered_map<char, std::vector<bool>> m_mapping;
+};
+
 void huffmanEncode(Settings &);

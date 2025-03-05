@@ -54,18 +54,22 @@ void huffmanEncode(Settings &settings)
     std::streamsize size = infile.tellg();
     infile.seekg(0, std::ios::beg);
 
-    std::vector<char> buffer(size);
-    if (!infile.read(buffer.data(), size)) throw std::runtime_error("Failed to open file " + settings.path);
+    std::vector<char> inBuffer(size);
+    if (!infile.read(inBuffer.data(), size)) throw std::runtime_error("Failed to open file " + settings.path);
 
     std::unordered_map<char, int> frequencyMap;   
 
-    countFrequencies(buffer, frequencyMap);
+    countFrequencies(inBuffer, frequencyMap);
     sortFrequencyMap(frequencyMap);
 
     // Create huffman tree, create a mapping
     HuffmanTree tree;
     tree.create(frequencyMap);
-    //tree.dumpTree();
+    tree.dumpTree();
+
+    Encoder encoder;
+    encoder.encode(tree);
+    encoder._dumpMappings();
 }
 
 void HuffmanTree::InsertNodeToList(std::list<Node> &l, Node n)
@@ -96,26 +100,26 @@ void HuffmanTree::create(std::unordered_map<char, int> &map)
     Node *rootNode = nullptr;
 
     // create the huffman tree 
-     while (!l.empty()) {
-        Node node1 = std::move(l.back());
-        l.pop_back();
+    while (!l.empty()) {
+       Node node1 = std::move(l.back());
+       l.pop_back();
 
-        if (l.empty()) {
-            root = new Node(std::move(node1)); // Store root properly
-            break;
-        }
+       if (l.empty()) {
+           root = new Node(std::move(node1)); // Store root properly
+           break;
+       }
 
-        Node node2 = std::move(l.back());
-        l.pop_back();
+       Node node2 = std::move(l.back());
+       l.pop_back();
 
-        Node newNode;
-        newNode.isLeaf = false;
-        newNode.frequency = node1.frequency + node2.frequency;
-        newNode.lnode = new Node(std::move(node1)); // Allocate new nodes
-        newNode.rnode = new Node(std::move(node2));
+       Node newNode;
+       newNode.isLeaf = false;
+       newNode.frequency = node1.frequency + node2.frequency;
+       newNode.lnode = new Node(std::move(node1)); // Allocate new nodes
+       newNode.rnode = new Node(std::move(node2));
 
-        InsertNodeToList(l, std::move(newNode));
-     }
+       InsertNodeToList(l, std::move(newNode));
+    }
 }
 
 void HuffmanTree::_dumpTree(Node *n, int depth, std::string prefix)
@@ -130,5 +134,44 @@ void HuffmanTree::_dumpTree(Node *n, int depth, std::string prefix)
         _dumpTree(n->rnode, depth + 1, "R─ ");
     } else {
         std::cout << indent << prefix << "[CHAR: " << n->character << " | FREQ: " << n->frequency << "]" << std::endl;
+    }
+}
+
+
+void Encoder::encode(HuffmanTree &t)
+{
+    std::vector<bool> code;
+    generateHuffmanCodes(t.getRootNode(), code);
+}
+
+
+void Encoder::generateHuffmanCodes(Node *root, std::vector<bool> code)
+{
+    if (!root) return;
+
+    // If it's a leaf node, store the code
+    if (root->isLeaf) {
+        m_mapping[root->character] = code;
+        return;
+    }
+
+    // Traverse left (append 0)
+    code.push_back(0);
+    generateHuffmanCodes(root->lnode, code);
+    code.pop_back(); // Backtrack
+
+    // Traverse right (append 1)
+    code.push_back(1);
+    generateHuffmanCodes(root->rnode, code);
+}
+
+void Encoder::_dumpMappings() 
+{
+    for (const auto& pair : m_mapping) {
+        std::cout << pair.first << " = ";
+        for (bool bit : pair.second) {
+            std::cout << bit;
+        }
+        std::cout << std::endl;
     }
 }

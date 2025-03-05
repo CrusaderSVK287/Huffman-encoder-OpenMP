@@ -1,10 +1,49 @@
 #include "huffman.hpp"
+#include <cstdint>
 #include <fstream>
 #include <stdexcept>
 #include <unordered_map>
 #include <vector>
 #include <algorithm>
 #include <list>
+
+void writeHuffmanTable(std::ofstream& outFile, 
+                       const std::unordered_map<char, std::vector<bool>>& huffmanMap) {
+    uint8_t mapSize = huffmanMap.size();  // Store the number of entries
+    outFile.write(reinterpret_cast<const char*>(&mapSize), sizeof(mapSize));
+
+    for (const auto& pair : huffmanMap) {
+        outFile.put(pair.first); // Write character
+
+        uint8_t bitLength = pair.second.size(); // Length of the encoding
+        outFile.put(bitLength); // Store bit length
+
+        uint8_t byte = 0;
+        for (size_t i = 0; i < bitLength; i++) {
+            if (pair.second[i]) {
+                byte |= (1 << (7 - (i % 8))); // Set bit in byte
+            }
+
+            if (i % 8 == 7 || i == bitLength - 1) { 
+                outFile.put(byte); // Write full byte or last byte
+                byte = 0; // Reset for next batch
+            }
+        }
+    }
+}
+
+void writeToFile(const std::string& filename, const std::vector<uint8_t>& outBuffer, Encoder &encoder) {
+    std::ofstream outFile(filename, std::ios::binary);
+    if (!outFile) {
+        std::cerr << "Error opening file: " << filename << std::endl;
+        return;
+    }
+
+    writeHuffmanTable(outFile, encoder.getMapping()); 
+
+    outFile.write(reinterpret_cast<const char*>(outBuffer.data()), outBuffer.size());
+    outFile.close();
+}
 
 void _dumpFrequencyMap(std::unordered_map<char, int> &map)
 {
@@ -65,11 +104,15 @@ void huffmanEncode(Settings &settings)
     // Create huffman tree, create a mapping
     HuffmanTree tree;
     tree.create(frequencyMap);
-    tree.dumpTree();
+    // tree.dumpTree();
 
     Encoder encoder;
     encoder.encode(tree);
-    encoder._dumpMappings();
+    // encoder.dumpMappings();
+    
+    std::vector<uint8_t> outBuffer;
+    encoder.encodeBuffer(inBuffer, outBuffer);
+    writeToFile(settings.path + ".huff", outBuffer, encoder);
 }
 
 void HuffmanTree::InsertNodeToList(std::list<Node> &l, Node n)
@@ -165,7 +208,7 @@ void Encoder::generateHuffmanCodes(Node *root, std::vector<bool> code)
     generateHuffmanCodes(root->rnode, code);
 }
 
-void Encoder::_dumpMappings() 
+void Encoder::dumpMappings() 
 {
     for (const auto& pair : m_mapping) {
         std::cout << pair.first << " = ";
@@ -175,3 +218,32 @@ void Encoder::_dumpMappings()
         std::cout << std::endl;
     }
 }
+
+void Encoder::encodeBuffer(const std::vector<char>& inBuffer, std::vector<uint8_t> &outBuffer)
+{
+    std::vector<bool> bitStream;
+
+    // Convert input characters into a sequence of bits
+    for (char c : inBuffer) {
+        auto it = m_mapping.find(c);
+        if (it != m_mapping.end()) {
+            bitStream.insert(bitStream.end(), it->second.begin(), it->second.end());
+        } else {
+            std::cerr << "Error: Character '" << c << "' not found in Huffman map.\n";
+            return;
+        }
+    }
+
+    // Pack bits into bytes
+    size_t bitCount = bitStream.size();
+    outBuffer.clear();
+    outBuffer.resize((bitCount + 7) / 8, 0); // Allocate enough bytes
+
+    for (size_t i = 0; i < bitCount; i++) {
+        if (bitStream[i]) {
+            outBuffer[i / 8] |= (1 << (7 - (i % 8))); // Pack bits (big-endian)
+        }
+    }
+}
+
+

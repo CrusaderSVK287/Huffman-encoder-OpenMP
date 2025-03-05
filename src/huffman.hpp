@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <cstring>
@@ -73,8 +74,9 @@ class Encoder {
 public:
     Encoder() {};
     void encode(HuffmanTree &t);
-    void _dumpMappings();
+    void dumpMappings();
     std::unordered_map<char, std::vector<bool>> getMapping() {return m_mapping;}
+    void encodeBuffer(const std::vector<char>&, std::vector<uint8_t> &outBuffer);
 
 private:
 

@@ -6,6 +6,7 @@
 #include <vector>
 #include <algorithm>
 #include <list>
+#include <omp.h>
 
 void writeHuffmanTable(std::ofstream& outFile, 
                        const std::unordered_map<char, std::vector<bool>>& huffmanMap) {
@@ -219,31 +220,58 @@ void Encoder::dumpMappings()
     }
 }
 
-void Encoder::encodeBuffer(const std::vector<char>& inBuffer, std::vector<uint8_t> &outBuffer)
+void Encoder::encodeBuffer(const std::vector<char>& inBuffer, std::vector<uint8_t>& outBuffer)
 {
-    std::vector<bool> bitStream;
+    size_t inSize = inBuffer.size();
+    size_t numThreads = omp_get_max_threads();
+    std::cout << numThreads;
+    // Each thread will work on its local buffer
+    std::vector<std::vector<bool>> localBitStreams(numThreads);
 
-    // Convert input characters into a sequence of bits
-    for (char c : inBuffer) {
-        auto it = m_mapping.find(c);
-        if (it != m_mapping.end()) {
-            bitStream.insert(bitStream.end(), it->second.begin(), it->second.end());
-        } else {
-            std::cerr << "Error: Character '" << c << "' not found in Huffman map.\n";
-            return;
+    #pragma omp parallel
+    {
+        int threadId = omp_get_thread_num();
+        size_t chunkSize = inSize / numThreads;
+        size_t startIdx = threadId * chunkSize;
+        size_t endIdx = (threadId == numThreads - 1) ? inSize : (threadId + 1) * chunkSize;
+
+        // Local bitstream for each thread
+        std::vector<bool> bitStream;
+
+        // Encode the assigned part of the buffer
+        for (size_t i = startIdx; i < endIdx; ++i) {
+            char c = inBuffer[i];
+            auto it = m_mapping.find(c);
+            if (it != m_mapping.end()) {
+                bitStream.insert(bitStream.end(), it->second.begin(), it->second.end());
+            } else {
+                throw std::runtime_error("Error: Character not found in Huffman map.\n");
+            }
         }
+
+        // Store the local bitstream
+        localBitStreams[threadId] = std::move(bitStream);
     }
 
-    // Pack bits into bytes
-    size_t bitCount = bitStream.size();
-    outBuffer.clear();
-    outBuffer.resize((bitCount + 7) / 8, 0); // Allocate enough bytes
+    // Combine all local bitstreams into a single outBuffer
+    size_t totalBitCount = 0;
+    for (const auto& localStream : localBitStreams) {
+        totalBitCount += localStream.size();
+    }
 
-    for (size_t i = 0; i < bitCount; i++) {
-        if (bitStream[i]) {
-            outBuffer[i / 8] |= (1 << (7 - (i % 8))); // Pack bits (big-endian)
+    // Resize the outBuffer to fit all bits
+    outBuffer.clear();
+    outBuffer.resize((totalBitCount + 7) / 8, 0); // Allocate enough bytes
+
+    size_t bitPos = 0;
+    // Combine the local bitstreams
+    for (const auto& localStream : localBitStreams) {
+        for (bool bit : localStream) {
+            if (bit) {
+                outBuffer[bitPos / 8] |= (1 << (7 - (bitPos % 8))); // Pack bits (big-endian)
+            }
+            bitPos++;
         }
     }
 }
-
 

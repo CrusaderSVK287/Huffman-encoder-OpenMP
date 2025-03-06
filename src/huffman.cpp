@@ -87,7 +87,7 @@ void countFrequencies(std::vector<char> &buffer, std::unordered_map<char,int> &m
     }
 }
 
-void huffmanEncode(Settings &settings) 
+void huffmanEncode(Settings &settings, bool parallel) 
 {
     // Read the file, create frequency map 
     std::ifstream infile(settings.path, std::ios::binary | std::ios::ate);
@@ -113,7 +113,7 @@ void huffmanEncode(Settings &settings)
     
     std::vector<uint8_t> outBuffer;
     encoder.encodeBuffer(inBuffer, outBuffer);
-    writeToFile(settings.path + ".huff", outBuffer, encoder);
+    writeToFile(settings.path + ".huff" + (parallel ? "p":"s"), outBuffer, encoder);
 }
 
 void HuffmanTree::InsertNodeToList(std::list<Node> &l, Node n)
@@ -224,7 +224,6 @@ void Encoder::encodeBuffer(const std::vector<char>& inBuffer, std::vector<uint8_
 {
     size_t inSize = inBuffer.size();
     size_t numThreads = omp_get_max_threads();
-    std::cout << numThreads;
     // Each thread will work on its local buffer
     std::vector<std::vector<bool>> localBitStreams(numThreads);
 

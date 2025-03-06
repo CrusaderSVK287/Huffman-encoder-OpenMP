@@ -22,12 +22,14 @@ public:
             }
             else if (!strcmp(argv[i], "-i")) {
                 this->path = argv[i+1];
-            }
+            } else if (!strcmp(argv[i], "-p")) {sequntial = false;}
+            else if (!strcmp(argv[i], "-s")) {parallel = false;}
         }
     }
 
     void dump() {
-        std::cout << "threadCount: " << threadCount << std::endl;
+        std::cout << "threadCount: " << threadCount << std::endl <<
+            "Path: " << path << std::endl;
     }
 
     void check() {
@@ -38,6 +40,8 @@ public:
     int threadCount {-1};
     const std::string usage = "./huffman [-n <num_of_threads>] -i <infile>";
     std::string path {""};
+    bool parallel{true};
+    bool sequntial{true};
 };
 
 class HuffmanTree {
@@ -85,4 +89,4 @@ private:
     std::unordered_map<char, std::vector<bool>> m_mapping;
 };
 
-void huffmanEncode(Settings &);
+void huffmanEncode(Settings &, bool parallel);

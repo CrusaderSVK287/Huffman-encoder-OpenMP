@@ -78,7 +78,7 @@ void countFrequencies(std::vector<char> &buffer, std::unordered_map<char,int> &m
             localMap[buffer[i]]++;
         }
 
-        #pragma omp critical
+//     #pragma omp critical
         {
             for (const auto& pair : localMap) {
                 map[pair.first] += pair.second;
@@ -101,18 +101,20 @@ void huffmanEncode(Settings &settings, bool parallel)
 
     countFrequencies(inBuffer, frequencyMap);
     sortFrequencyMap(frequencyMap);
+    if (settings.debug) _dumpFrequencyMap(frequencyMap);
 
     // Create huffman tree, create a mapping
     HuffmanTree tree;
     tree.create(frequencyMap);
-    // tree.dumpTree();
+    if (settings.debug) tree.dumpTree();
 
     Encoder encoder;
     encoder.encode(tree);
-    // encoder.dumpMappings();
+    if(settings.debug) encoder.dumpMappings();
     
     std::vector<uint8_t> outBuffer;
     encoder.encodeBuffer(inBuffer, outBuffer);
+    if(settings.debug) encoder._dumpBuffer(outBuffer);
     writeToFile(settings.path + ".huff" + (parallel ? "p":"s"), outBuffer, encoder);
 }
 
@@ -130,12 +132,9 @@ void HuffmanTree::InsertNodeToList(std::list<Node> &l, Node n)
 
 void HuffmanTree::create(std::unordered_map<char, int> &map)
 {
-    // create a list of nodes and transform all pairs from map to nodes
-    ;
-
     for (auto &pair : map) {
         Node node;
-        node.isLeaf = true; // all leters are leafs
+        node.isLeaf = true; // all leters are leaves
         node.character = pair.first;
         node.frequency = pair.second;
         l.emplace_back(node);
@@ -149,7 +148,7 @@ void HuffmanTree::create(std::unordered_map<char, int> &map)
        l.pop_back();
 
        if (l.empty()) {
-           root = new Node(std::move(node1)); // Store root properly
+           root = new Node(std::move(node1));
            break;
        }
 
@@ -159,7 +158,7 @@ void HuffmanTree::create(std::unordered_map<char, int> &map)
        Node newNode;
        newNode.isLeaf = false;
        newNode.frequency = node1.frequency + node2.frequency;
-       newNode.lnode = new Node(std::move(node1)); // Allocate new nodes
+       newNode.lnode = new Node(std::move(node1));
        newNode.rnode = new Node(std::move(node2));
 
        InsertNodeToList(l, std::move(newNode));
@@ -248,19 +247,16 @@ void Encoder::encodeBuffer(const std::vector<char>& inBuffer, std::vector<uint8_
             }
         }
 
-        // Store the local bitstream
         localBitStreams[threadId] = std::move(bitStream);
     }
 
-    // Combine all local bitstreams into a single outBuffer
     size_t totalBitCount = 0;
     for (const auto& localStream : localBitStreams) {
         totalBitCount += localStream.size();
     }
 
-    // Resize the outBuffer to fit all bits
     outBuffer.clear();
-    outBuffer.resize((totalBitCount + 7) / 8, 0); // Allocate enough bytes
+    outBuffer.resize((totalBitCount + 7) / 8, 0);
 
     size_t bitPos = 0;
     // Combine the local bitstreams
@@ -274,3 +270,12 @@ void Encoder::encodeBuffer(const std::vector<char>& inBuffer, std::vector<uint8_
     }
 }
 
+void Encoder::_dumpBuffer(std::vector<uint8_t> &buffer)
+{
+    for (uint8_t byte : buffer) {
+        for (int i = 7; i >= 0; --i) {
+            std::cout << ((byte >> i) & 1);
+        }
+    }
+    std::cout << std::endl;
+}

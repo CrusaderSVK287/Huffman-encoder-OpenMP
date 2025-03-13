@@ -24,6 +24,7 @@ public:
                 this->path = argv[i+1];
             } else if (!strcmp(argv[i], "-p")) {sequntial = false;}
             else if (!strcmp(argv[i], "-s")) {parallel = false;}
+            else if (!strcmp(argv[i], "--debug")) {debug = true;}
         }
     }
 
@@ -42,6 +43,7 @@ public:
     std::string path {""};
     bool parallel{true};
     bool sequntial{true};
+    bool debug{false};
 };
 
 class HuffmanTree {
@@ -81,6 +83,7 @@ public:
     void dumpMappings();
     std::unordered_map<char, std::vector<bool>> getMapping() {return m_mapping;}
     void encodeBuffer(const std::vector<char>&, std::vector<uint8_t> &outBuffer);
+    void _dumpBuffer(std::vector<uint8_t> &buffer);
 
 private:
 

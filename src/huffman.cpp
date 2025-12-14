@@ -170,6 +170,29 @@ void HuffmanTree::create(std::unordered_map<char, int> &map)
     }
 }
 
+void HuffmanTree::load(std::unordered_map<char, std::vector<bool>> mappings)
+{
+    root = new Node();
+
+    for (auto &[value, bits] : mappings) {
+        Node* current = root;
+        for (bool bit : bits) {
+            // 1 to the right, 0 to the left
+            if (bit) {
+                if (!current->rnode) {current->rnode = new Node();}
+                current = current->rnode;
+                current->isLeaf = false;
+            } else {
+                if (!current->lnode) {current->lnode = new Node();}
+                current = current->lnode;
+                current->isLeaf = false;
+            }
+        }
+        current->isLeaf = true;
+        current->character = value;
+    }
+}
+
 void HuffmanTree::_dumpTree(Node *n, int depth, std::string prefix)
 {
     if (!n) return; // Base case
@@ -177,11 +200,12 @@ void HuffmanTree::_dumpTree(Node *n, int depth, std::string prefix)
     std::string indent(depth * 8, ' '); // Indentation based on depth
     
     if (!n->isLeaf) {
-        std::cout << indent << prefix << "[FREQ: " << n->frequency << "]" << std::endl;
+        //std::cout << indent << prefix << "[FREQ: " << n->frequency << "]" << std::endl;
         _dumpTree(n->lnode, depth + 1, "L─ ");
         _dumpTree(n->rnode, depth + 1, "R─ ");
     } else {
-        std::cout << indent << prefix << "[CHAR: " << n->character << " | FREQ: " << n->frequency << "]" << std::endl;
+        //std::cout << indent << prefix << "[CHAR: " << n->character << " | FREQ: " << n->frequency << "]" << std::endl;
+        std::cout << indent << prefix << "[CHAR: " << n->character << "]" << std::endl;
     }
 }
 
@@ -205,11 +229,11 @@ void huffmanEncode(Settings &settings)
     HuffmanTree tree;
     tree.create(frequencyMap);
     if (settings.debug) tree.dumpTree();
+    //tree.dumpTree();
 
     Encoder encoder;
     encoder.encode(tree);
     if(settings.debug) encoder.dumpMappings();
-    encoder.dumpMappings();
     
     std::vector<uint8_t> outBuffer;
     encoder.encodeBuffer(inBuffer, outBuffer);
@@ -228,6 +252,11 @@ void huffmanDecode(Settings &settings)
     readHuffmanTable(infile, huffmanMap);
 
     Decoder decoder(huffmanMap);
-    decoder.dumpMappings();
+
+    HuffmanTree tree;
+    tree.load(huffmanMap);
+    //tree.dumpTree();
+    
+    decoder.decodeAndWrite(infile, tree, settings.path);
 }
 

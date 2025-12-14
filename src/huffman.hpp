@@ -3,9 +3,10 @@
 #include <string>
 #include <unordered_map>
 #include <list>
+#include <stdbool.h>
+#include <vector>
 
 #include "settings.hpp"
-#include "decoder.hpp"
 
 class HuffmanTree;
 class Node;
@@ -18,6 +19,8 @@ public:
 
     void InsertNodeToList(std::list<Node> &l, Node n);
     void create(std::unordered_map<char, int> &map);
+    void load(std::unordered_map<char, std::vector<bool>> mappings);
+
     void dumpTree() {_dumpTree(root, 0, "root");};
     Node *getRootNode() {return root;}
 

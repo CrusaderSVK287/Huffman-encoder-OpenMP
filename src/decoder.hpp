@@ -1,13 +1,14 @@
 #pragma once
 
 #include <unordered_map>
-#include <stdbool.h>
-#include <vector>
+
+#include "huffman.hpp"
+
 class Decoder {
     public:
         Decoder(std::unordered_map<char, std::vector<bool>> map):m_mapping(map) {}  
 
-        void BuildHuffmanTree();
+        void decodeAndWrite(std::ifstream &inFile, HuffmanTree &tree, std::string path);
         void dumpMappings();
 
     private:

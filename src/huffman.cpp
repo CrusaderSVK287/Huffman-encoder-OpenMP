@@ -44,6 +44,9 @@ void writeToFile(const std::string& filename, const std::vector<uint8_t>& outBuf
 
     writeHuffmanTable(outFile, encoder.getMapping()); 
 
+    std::string endStr = "\n__ENDTABLE__\n";
+    outFile.write(endStr.data(), endStr.size());
+
     outFile.write(reinterpret_cast<const char*>(outBuffer.data()), outBuffer.size());
     outFile.close();
 }
@@ -80,7 +83,7 @@ void countFrequencies(std::vector<char> &buffer, std::unordered_map<char,int> &m
             localMap[buffer[i]]++;
         }
 
-//     #pragma omp critical
+    #pragma omp critical
         {
             for (const auto& pair : localMap) {
                 map[pair.first] += pair.second;

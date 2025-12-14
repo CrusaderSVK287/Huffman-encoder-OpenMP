@@ -8,32 +8,21 @@
 
 class Settings {
 public:
-    Settings(int argc, char **argv) {
-        for (int i = 0; i < argc; i++) {
-            if (!strcmp(argv[i], "-n")) {
-                this->threadCount = std::stoi(argv[i+1]);
-                i++;
-            }
-            else if (!strcmp(argv[i], "-i")) {
-                this->path = argv[i+1];
-            } 
-            else if (!strcmp(argv[i], "-d")) {decode = true;}
-            else if (!strcmp(argv[i], "--debug")) {debug = true;}
-        }
-    }
+    Settings(int argc, char **argv);
 
     void dump() {
         std::cout << "threadCount: " << threadCount << std::endl <<
             "Path: " << path << std::endl;
     }
 
-    void check() {
-        if (threadCount <= 0) throw std::runtime_error("Wrong -n config, usage: " + usage);
-        if (path == "") throw std::runtime_error("Wrong path, usage:" + usage);
-    }
+    void check();
 
     int threadCount {omp_get_num_procs()};
-    const std::string usage = "./huffman [-n <num_of_threads>] -i <infile>";
+    void usage() {
+        std::cout << "./huffman [-n <num_of_threads>] [-d] <path>\n"
+        "\t-n <num_of_threads> - specify the number of threads to be used\n"
+        "\t-d or --decode - decode (decompress) a .huff file\n";
+    }
     std::string path {""};
     bool decode{false};
     bool debug{false};

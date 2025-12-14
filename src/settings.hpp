@@ -17,7 +17,7 @@ public:
             else if (!strcmp(argv[i], "-i")) {
                 this->path = argv[i+1];
             } 
-            else if (!strcmp(argv[i], "-s")) {parallel = false;}
+            else if (!strcmp(argv[i], "-d")) {decode = true;}
             else if (!strcmp(argv[i], "--debug")) {debug = true;}
         }
     }
@@ -35,7 +35,7 @@ public:
     int threadCount {omp_get_num_procs()};
     const std::string usage = "./huffman [-n <num_of_threads>] -i <infile>";
     std::string path {""};
-    bool parallel{true};
+    bool decode{false};
     bool debug{false};
 };
 

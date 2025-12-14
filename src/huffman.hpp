@@ -42,3 +42,4 @@ public:
 
 
 void huffmanEncode(Settings &settings);
+void huffmanDecode(Settings &settings);

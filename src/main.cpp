@@ -8,10 +8,11 @@ int main(int argc, char **argv) {
 
     try {
         settings.check();
-        if (!settings.parallel) {
-            omp_set_num_threads(1);
+        if (settings.decode) {
+            huffmanDecode(settings);
+        } else {
+            huffmanEncode(settings);
         }
-        huffmanEncode(settings);
     }
     catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
